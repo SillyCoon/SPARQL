@@ -1,7 +1,22 @@
 from SPARQLWrapper import SPARQLWrapper, XML, RDF, JSON
 import json
 
-filmUri = "Q72962"
+from requests import get
+
+
+def getFilmUri(movie_title: str):
+    json = get('https://www.wikidata.org/w/api.php', {
+        'action': 'wbgetentities',
+        'titles': movie_title,
+        'sites': 'enwiki',
+        'props': '',
+        'format': 'json'
+    }).json()
+    result = list(json['entities'])[0]
+    return result
+
+
+filmUri = getFilmUri('Reservoir Dogs')
 
 sparql = SPARQLWrapper("http://query.wikidata.org/sparql")
 sparql.setQuery("""
@@ -18,11 +33,9 @@ SELECT DISTINCT ?film ?filmLabel ?myear WHERE {
   FILTER(YEAR(?date) = YEAR(?mydate))
   SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
 }
-""" % filmUri);
+""" % filmUri)
 sparql.setReturnFormat(JSON)
 results = sparql.query().convert()
 
 with open("response.json", 'w') as file:
     file.write(json.dumps(results["results"]["bindings"], indent=4))
-
-
